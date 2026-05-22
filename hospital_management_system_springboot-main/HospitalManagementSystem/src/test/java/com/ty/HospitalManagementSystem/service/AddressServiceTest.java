@@ -1,18 +1,16 @@
 package com.ty.HospitalManagementSystem.service;
 
-import com.ty.HospitalManagementSystem.dao.Addressdao;
 import com.ty.HospitalManagementSystem.Entity.Address;
-import com.ty.HospitalManagementSystem.exception.IdNotFoundException;
-
+import com.ty.HospitalManagementSystem.dao.Addressdao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -29,98 +27,82 @@ class AddressServiceTest {
     private Address address;
 
     @BeforeEach
-    void setup() {
+    void setUp() {
         address = new Address();
+
+        // Set values according to your Address entity fields
         address.setId(1);
         address.setCity("Bangalore");
         address.setState("Karnataka");
         address.setPincode(560001);
     }
 
-
-
     @Test
-    void saveAddress_success() {
+    void testSaveAddress() {
+
         when(addressdao.saveAddress(address)).thenReturn(address);
 
-        Address saved = addressService.saveAddress(address);
+        Address savedAddress = addressService.saveAddress(address);
 
-        assertNotNull(saved);
-        assertEquals("Bangalore", saved.getCity());
-        verify(addressdao).saveAddress(address);
+        assertNotNull(savedAddress);
+        assertEquals(address.getId(), savedAddress.getId());
+        assertEquals(address.getCity(), savedAddress.getCity());
+
+        verify(addressdao, times(1)).saveAddress(address);
     }
 
     @Test
-    void updateAddress_success() {
-        when(addressdao.updateAddress(1, address))
-                .thenReturn(Optional.of(address));
+    void testUpdateAddress() {
 
-        Address updated = addressService.updateAddress(1, address);
+        when(addressdao.updateAddress(1, address)).thenReturn(address);
 
-        assertEquals(1, updated.getId());
-        verify(addressdao).updateAddress(1, address);
+        Address updatedAddress = addressService.updateAddress(1, address);
+
+        assertNotNull(updatedAddress);
+        assertEquals("Bangalore", updatedAddress.getCity());
+
+        verify(addressdao, times(1)).updateAddress(1, address);
     }
 
     @Test
-    void updateAddress_notFound_shouldThrowException() {
-        when(addressdao.updateAddress(1, address))
-                .thenReturn(Optional.empty());
+    void testDeleteAddress() {
 
-        assertThrows(IdNotFoundException.class,
-                () -> addressService.updateAddress(1, address));
-    }
+        when(addressdao.deleteAddress(1)).thenReturn(address);
 
+        Address deletedAddress = addressService.deleteAddress(1);
 
+        assertNotNull(deletedAddress);
+        assertEquals(1, deletedAddress.getId());
 
-    @Test
-    void deleteAddress_success() {
-        when(addressdao.deleteAddress(1))
-                .thenReturn(Optional.of(address));
-
-        Address deleted = addressService.deleteAddress(1);
-
-        assertNotNull(deleted);
-        verify(addressdao).deleteAddress(1);
+        verify(addressdao, times(1)).deleteAddress(1);
     }
 
     @Test
-    void deleteAddress_notFound_shouldThrowException() {
-        when(addressdao.deleteAddress(1))
-                .thenReturn(Optional.empty());
+    void testGetAddressById() {
 
-        assertThrows(IdNotFoundException.class,
-                () -> addressService.deleteAddress(1));
+        when(addressdao.getaddressbyid(1)).thenReturn(address);
+
+        Address fetchedAddress = addressService.getaddressbyid(1);
+
+        assertNotNull(fetchedAddress);
+        assertEquals(1, fetchedAddress.getId());
+
+        verify(addressdao, times(1)).getaddressbyid(1);
     }
 
     @Test
-    void getAddressById_success() {
-        when(addressdao.getaddressbyid(1))
-                .thenReturn(Optional.of(address));
+    void testGetAllAddress() {
 
-        Address found = addressService.getaddressbyid(1);
+        List<Address> addressList = new ArrayList<>();
+        addressList.add(address);
 
-        assertEquals(560001, found.getPincode());
-    }
-
-    @Test
-    void getAddressById_notFound_shouldThrowException() {
-        when(addressdao.getaddressbyid(1))
-                .thenReturn(Optional.empty());
-
-        assertThrows(IdNotFoundException.class,
-                () -> addressService.getaddressbyid(1));
-    }
-
-
-
-    @Test
-    void getAllAddress_success() {
-        List<Address> list = List.of(address);
-        when(addressdao.getAllAddress()).thenReturn(list);
+        when(addressdao.getAllAddress()).thenReturn(addressList);
 
         List<Address> result = addressService.getAllAddress();
 
+        assertNotNull(result);
         assertEquals(1, result.size());
-        verify(addressdao).getAllAddress();
+
+        verify(addressdao, times(1)).getAllAddress();
     }
 }

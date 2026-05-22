@@ -1,9 +1,9 @@
 package com.ty.HospitalManagementSystem.service;
 
-import com.ty.HospitalManagementSystem.dao.Addressdao;
-import com.ty.HospitalManagementSystem.dao.Persondao;
 import com.ty.HospitalManagementSystem.Entity.Address;
 import com.ty.HospitalManagementSystem.Entity.Person;
+import com.ty.HospitalManagementSystem.dao.Addressdao;
+import com.ty.HospitalManagementSystem.dao.Persondao;
 import com.ty.HospitalManagementSystem.exception.IdNotFoundException;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -14,9 +14,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
-import java.util.*;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -37,120 +39,287 @@ class PersonServiceTest {
     private Address address;
 
     @BeforeEach
-    void setup() {
+    void setUp() {
+
         address = new Address();
         address.setId(1);
-        address.setCity("Bangalore");
 
         person = new Person();
-        person.setId(10);
-        person.setName("DK");
-        person.setEmail("dk@mail.com");
-        person.setPhone(9999999999L);
+
+        person.setId(1);
+        person.setName("John");
+        person.setEmail("john@gmail.com");
+        person.setPhone(9876543210L);
         person.setAddress(address);
     }
 
     @Test
-    void savePerson_withExistingAddress_shouldSave() {
-        when(addressdao.getaddressbyid(1)).thenReturn(Optional.of(address));
-        when(persondao.savePerson(person)).thenReturn(person);
+    void testSavePerson() {
 
-        Person saved = personService.savePerson(person);
+        when(addressdao.getaddressbyid(1))
+                .thenReturn(address);
 
-        assertNotNull(saved);
-        verify(addressdao).getaddressbyid(1);
-        verify(persondao).savePerson(person);
+        when(persondao.savePerson(person))
+                .thenReturn(person);
+
+        Person savedPerson =
+                personService.savePerson(person);
+
+        assertNotNull(savedPerson);
+        assertEquals(1, savedPerson.getId());
+        assertEquals("John", savedPerson.getName());
+
+        verify(addressdao, times(1))
+                .getaddressbyid(1);
+
+        verify(persondao, times(1))
+                .savePerson(person);
     }
 
     @Test
-    void savePerson_addressNotFound_shouldThrowException() {
-        when(addressdao.getaddressbyid(1)).thenReturn(Optional.empty());
+    void testSavePersonThrowsExceptionWhenAddressNotFound() {
 
-        assertThrows(IdNotFoundException.class,
-                () -> personService.savePerson(person));
-    }
+        when(addressdao.getaddressbyid(1))
+                .thenReturn(null);
 
+        IdNotFoundException exception =
+                assertThrows(IdNotFoundException.class, () -> {
+                    personService.savePerson(person);
+                });
 
+        assertEquals(
+                "Address Not found 1",
+                exception.getMessage());
 
-    @Test
-    void updatePerson_success() {
-        when(persondao.getpersonbyid(10)).thenReturn(Optional.of(person));
-        when(addressdao.getaddressbyid(1)).thenReturn(Optional.of(address));
-        when(persondao.savePerson(person)).thenReturn(person);
+        verify(addressdao, times(1))
+                .getaddressbyid(1);
 
-        Person updated = personService.updatePerson(10, person);
-
-        assertEquals("DK", updated.getName());
-        verify(persondao).savePerson(person);
-    }
-
-    @Test
-    void updatePerson_personNotFound_shouldThrowException() {
-        when(persondao.getpersonbyid(10)).thenReturn(Optional.empty());
-
-        assertThrows(IdNotFoundException.class,
-                () -> personService.updatePerson(10, person));
-    }
-
-
-    @Test
-    void deletePerson_success() {
-        when(persondao.getpersonbyid(10)).thenReturn(Optional.of(person));
-        when(persondao.deletePerson(person)).thenReturn(person);
-
-        Person deleted = personService.deletePerson(10);
-
-        assertNotNull(deleted);
-        verify(persondao).deletePerson(person);
+        verify(persondao, never())
+                .savePerson(any());
     }
 
     @Test
-    void deletePerson_notFound_shouldThrowException() {
-        when(persondao.getpersonbyid(10)).thenReturn(Optional.empty());
+    void testUpdatePerson() {
 
-        assertThrows(IdNotFoundException.class,
-                () -> personService.deletePerson(10));
+        Person dbPerson = new Person();
+
+        dbPerson.setId(1);
+        dbPerson.setName("Old Name");
+        dbPerson.setEmail("old@gmail.com");
+        dbPerson.setPhone(9999999999L);
+
+        when(persondao.getPersonById(1))
+                .thenReturn(dbPerson);
+
+        when(addressdao.getaddressbyid(1))
+                .thenReturn(address);
+
+        when(persondao.updatePerson(any(Person.class)))
+                .thenReturn(person);
+
+        Person updatedPerson =
+                personService.updatePerson(1, person);
+
+        assertNotNull(updatedPerson);
+        assertEquals("John", updatedPerson.getName());
+
+        verify(persondao, times(1))
+                .getPersonById(1);
+
+        verify(addressdao, times(1))
+                .getaddressbyid(1);
+
+        verify(persondao, times(1))
+                .updatePerson(any(Person.class));
     }
 
-
     @Test
-    void getPersonById_success() {
-        when(persondao.getpersonbyid(10)).thenReturn(Optional.of(person));
+    void testUpdatePersonThrowsExceptionWhenPersonNotFound() {
 
-        Person found = personService.getpersonbyid(10);
+        when(persondao.getPersonById(1))
+                .thenReturn(null);
 
-        assertEquals(10, found.getId());
+        IdNotFoundException exception =
+                assertThrows(IdNotFoundException.class, () -> {
+                    personService.updatePerson(1, person);
+                });
+
+        assertEquals(
+                "Person not found with id 1",
+                exception.getMessage());
+
+        verify(persondao, times(1))
+                .getPersonById(1);
+
+        verify(persondao, never())
+                .updatePerson(any());
     }
 
     @Test
-    void getPersonById_notFound_shouldThrowException() {
-        when(persondao.getpersonbyid(10)).thenReturn(Optional.empty());
+    void testUpdatePersonThrowsExceptionWhenAddressNotFound() {
 
-        assertThrows(IdNotFoundException.class,
-                () -> personService.getpersonbyid(10));
+        Person dbPerson = new Person();
+        dbPerson.setId(1);
+
+        when(persondao.getPersonById(1))
+                .thenReturn(dbPerson);
+
+        when(addressdao.getaddressbyid(1))
+                .thenReturn(null);
+
+        IdNotFoundException exception =
+                assertThrows(IdNotFoundException.class, () -> {
+                    personService.updatePerson(1, person);
+                });
+
+        assertEquals(
+                "Address not found with id 1",
+                exception.getMessage());
+
+        verify(addressdao, times(1))
+                .getaddressbyid(1);
+
+        verify(persondao, never())
+                .updatePerson(any());
     }
 
+    @Test
+    void testDeletePerson() {
 
+        when(persondao.getPersonById(1))
+                .thenReturn(person);
+
+        Person deletedPerson =
+                personService.deletePerson(1);
+
+        assertNotNull(deletedPerson);
+        assertEquals(1, deletedPerson.getId());
+
+        verify(persondao, times(1))
+                .getPersonById(1);
+
+        verify(persondao, times(1))
+                .deletePerson(person);
+    }
 
     @Test
-    void getAllPersons_success() {
-        List<Person> persons = List.of(person);
-        Page<Person> page = new PageImpl<>(persons);
+    void testDeletePersonThrowsException() {
 
-        when(persondao.getAllPerson(any(Pageable.class))).thenReturn(page);
+        when(persondao.getPersonById(1))
+                .thenReturn(null);
 
-        List<Person> result = personService.getAllPersons(0, 5, "asc");
+        IdNotFoundException exception =
+                assertThrows(IdNotFoundException.class, () -> {
+                    personService.deletePerson(1);
+                });
 
+        assertEquals(
+                "Person not found with id 1",
+                exception.getMessage());
+
+        verify(persondao, times(1))
+                .getPersonById(1);
+
+        verify(persondao, never())
+                .deletePerson(any());
+    }
+
+    @Test
+    void testGetPersonById() {
+
+        when(persondao.getPersonById(1))
+                .thenReturn(person);
+
+        Person fetchedPerson =
+                personService.getPersonById(1);
+
+        assertNotNull(fetchedPerson);
+        assertEquals(1, fetchedPerson.getId());
+
+        verify(persondao, times(1))
+                .getPersonById(1);
+    }
+
+    @Test
+    void testGetPersonByIdThrowsException() {
+
+        when(persondao.getPersonById(1))
+                .thenReturn(null);
+
+        IdNotFoundException exception =
+                assertThrows(IdNotFoundException.class, () -> {
+                    personService.getPersonById(1);
+                });
+
+        assertEquals(
+                "Person not found with id 1",
+                exception.getMessage());
+
+        verify(persondao, times(1))
+                .getPersonById(1);
+    }
+
+    @Test
+    void testGetAllPersonsAscending() {
+
+        List<Person> personList = List.of(person);
+
+        Page<Person> personPage =
+                new PageImpl<>(personList);
+
+        when(persondao.getAllPerson(any(Pageable.class)))
+                .thenReturn(personPage);
+
+        List<Person> result =
+                personService.getAllPersons(0, 5, "asc");
+
+        assertNotNull(result);
         assertEquals(1, result.size());
+
+        verify(persondao, times(1))
+                .getAllPerson(any(Pageable.class));
     }
 
     @Test
-    void getAllPersons_empty_shouldThrowException() {
-        Page<Person> emptyPage = new PageImpl<>(Collections.emptyList());
+    void testGetAllPersonsDescending() {
 
-        when(persondao.getAllPerson(any(Pageable.class))).thenReturn(emptyPage);
+        List<Person> personList = List.of(person);
 
-        assertThrows(IdNotFoundException.class,
-                () -> personService.getAllPersons(0, 5, "asc"));
+        Page<Person> personPage =
+                new PageImpl<>(personList);
+
+        when(persondao.getAllPerson(any(Pageable.class)))
+                .thenReturn(personPage);
+
+        List<Person> result =
+                personService.getAllPersons(0, 5, "desc");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+
+        verify(persondao, times(1))
+                .getAllPerson(any(Pageable.class));
+    }
+
+    @Test
+    void testGetAllPersonsThrowsException() {
+
+        Page<Person> emptyPage =
+                new PageImpl<>(List.of());
+
+        when(persondao.getAllPerson(any(Pageable.class)))
+                .thenReturn(emptyPage);
+
+        IdNotFoundException exception =
+                assertThrows(IdNotFoundException.class, () -> {
+                    personService.getAllPersons(0, 5, "asc");
+                });
+
+        assertEquals(
+                "No persons found",
+                exception.getMessage());
+
+        verify(persondao, times(1))
+                .getAllPerson(any(Pageable.class));
     }
 }
