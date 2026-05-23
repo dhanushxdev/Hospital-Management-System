@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/dhanushxdev/Hospital-Management-System.git'
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                bat 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                bat 'docker-compose build'
+            }
+        }
+
+        stage('Deploy using Docker Compose') {
+            steps {
+                bat 'docker-compose down'
+                bat 'docker-compose up -d'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'HMS deployed successfully using Docker Compose!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
