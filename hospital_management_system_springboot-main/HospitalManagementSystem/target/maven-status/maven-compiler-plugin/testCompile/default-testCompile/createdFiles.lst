@@ -1,1 +1,8 @@
+com\ty\HospitalManagementSystem\service\HospitalServiceTest.class
 com\ty\HospitalManagementSystem\HospitalManagementSystemApplicationTests.class
+com\ty\HospitalManagementSystem\service\MedItemServiceTest.class
+com\ty\HospitalManagementSystem\service\MedOrderServiceTest.class
+com\ty\HospitalManagementSystem\service\BranchServiceTest.class
+com\ty\HospitalManagementSystem\service\PersonServiceTest.class
+com\ty\HospitalManagementSystem\service\AddressServiceTest.class
+com\ty\HospitalManagementSystem\service\EncounterServiceTest.class

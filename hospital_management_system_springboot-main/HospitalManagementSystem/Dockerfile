@@ -1,14 +1,15 @@
-# Use lightweight Java 21 image
-FROM eclipse-temurin:21-jdk-alpine
+FROM maven:3.9-eclipse-temurin-17 AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy jar file
-COPY target/HospitalManagementSystem-0.0.1-SNAPSHOT.jar app.jar
+COPY . .
 
-# Expose application port
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:17
+
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8080
 
-# Run application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
